@@ -220,14 +220,23 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
   if (scaleup>1)
   {
     limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
-    id <- rep(1:(nrow(mu.all)/scaleup), each=scaleup)
-    lambda.stats <- aggregate(mu.all, id, function(d){c(mean=mean(d), sd=stats::sd(d), quantile(d,c(limitty[1], 0.5, limitty[2])))})
     
-    lambdaRaster <- terra::rast(cbind(predcoords, lambda.stats[,4]),crs = terra::crs(covars), type = "xyz")
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,3]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,4]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,1]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,2]), crs = terra::crs(covars), type = "xyz"))
+    tem <- terra::rast(cbind(predcoords, 1), crs = terra::crs(covars), type = "xyz")
+    tem2<-terra::aggregate(tem, scaleup)
+    values(tem2) <- 1:(dim(tem2)[1]* dim(tem2)[2])
+    id <- terra::extract(tem2, predcoords, method="simple")
+    
+    predcoords2 <- terra::crds(tem2, na.rm=FALSE)
+    
+    mu.all <- as.data.table(mu.all)
+    mu.all[,ID:=id]
+    lambda.stats <- mu.all[,as.list(c(mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), ((quantile(unlist(.SD), probs=c(0.025,0.5, 0.975)))))) , by=ID ]
+    
+    lambdaRaster <- terra::rast(cbind(predcoords2, lambda.stats[,5]),crs = terra::crs(covars), type = "xyz")
+    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,4]), crs = terra::crs(covars), type = "xyz"))
+    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,5]), crs = terra::crs(covars), type = "xyz"))
+    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,2]), crs = terra::crs(covars), type = "xyz"))
+    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,3]), crs = terra::crs(covars), type = "xyz"))
     names(lambdaRaster) <- c("Median", "Lower", "Upper","Mean", "SD")
   }
   else if (DaveQuickTest==1)
