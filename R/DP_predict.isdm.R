@@ -215,7 +215,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
   {
     limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
     id <- rep(1:(nrow(mu.all)/scaleup), each=scaleup)
-    lambda.stats <- aggregate(mu.all, id, function(d){c(mean=stats::mean(d), sd=stats::sd(d), quantile(d,c(limitty[1], 0.5, limitty[2])))})
+    lambda.stats <- aggregate(mu.all, id, function(d){c(mean=mean(d), sd=stats::sd(d), quantile(d,c(limitty[1], 0.5, limitty[2])))})
     
     lambdaRaster <- terra::rast(cbind(predcoords, mu.stats[,4]),crs = terra::crs(covars), type = "xyz")
     lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,3]), crs = terra::crs(covars), type = "xyz"))
@@ -234,7 +234,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
   
     limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
     
-    lambda.stats <- apply(mu.all, 1, function(d){c(mean=stats::mean(d), sd=stats::sd(d), quantile(d,c(limitty[1], 0.5, limitty[2])))})
+    lambda.stats <- apply(mu.all, 1, function(d){c(mean=mean(d), sd=stats::sd(d), quantile(d,c(limitty[1], 0.5, limitty[2])))})
     
     lambdaRaster <- terra::rast(cbind(predcoords, mu.stats[,4]),
                                 crs = terra::crs(covars), type = "xyz")
