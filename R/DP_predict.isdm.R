@@ -14,7 +14,7 @@
 ###############################################################################################
 
 #Function to get prediction from a fitted INLA model.
-predict.isdm <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", confidence.level=0.95, quick=FALSE, scaleup=1, DaveQuickTest=0, DP.mem.clean=F,...){
+predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", confidence.level=0.95, quick=FALSE, scaleup=1, DaveQuickTest=0, DP.mem.clean=F,...){
   
   #check if there's anything to do.
   if( !is.logical(includeFixed) & !all( includeFixed %in% names( covars)))
