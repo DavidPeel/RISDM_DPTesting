@@ -226,18 +226,34 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     values(tem2) <- 1:(dim(tem2)[1]* dim(tem2)[2])
     id <- terra::extract(tem2, predcoords, method="simple")
     
-    predcoords2 <- terra::crds(tem2, na.rm=FALSE)
-    
     mu.all <- as.data.table(mu.all)
     mu.all[,ID:=id]
-    lambda.stats <- mu.all[,as.list(c(mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), ((quantile(unlist(.SD), probs=c(0.025,0.5, 0.975)))))) , by=ID ]
     
-    lambdaRaster <- terra::rast(cbind(predcoords2, lambda.stats[,5]),crs = terra::crs(covars), type = "xyz")
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,4]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,5]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,2]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords2, lambda.stats[,3]), crs = terra::crs(covars), type = "xyz"))
+    predcoords2 <- terra::crds(tem2, na.rm=FALSE)
+    
+    lambda.stats <- mu.all[,as.list(
+      c(
+          mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), 
+          quantile(unlist(.SD), probs=c(0.025,0.5, 0.975))
+       )
+      ),
+      by=ID ]
+    
+    lambdaRaster <- c(tem2, tem2, tem2, tem2, tem2)
     names(lambdaRaster) <- c("Median", "Lower", "Upper","Mean", "SD")
+      
+    values(lambdaRaster$Median) <- NA
+    values(lambdaRaster$Median)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,4])
+    values(lambdaRaster$Lower) <- NA
+    values(lambdaRaster$Lower)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,3])
+    values(lambdaRaster$Upper) <- NA
+    values(lambdaRaster$Upper)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,5])
+    values(lambdaRaster$Mean) <- NA
+    values(lambdaRaster$Mean)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,1])
+    values(lambdaRaster$SD) <- NA
+    values(lambdaRaster$SD)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,2])
+
+   
   }
   else if (DaveQuickTest==1)
   {
