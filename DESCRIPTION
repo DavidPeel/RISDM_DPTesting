@@ -17,7 +17,8 @@ Imports:
   fmesher (>= 0.1.2),
   methods,
   stats,
-  colorRamps
+  colorRamps,
+  data.table
 Suggests:
   MBHdesign (>= 2.3.13),
   knitr,
