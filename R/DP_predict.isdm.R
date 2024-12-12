@@ -242,16 +242,20 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     lambdaRaster <- c(tem2, tem2, tem2, tem2, tem2)
     names(lambdaRaster) <- c("Median", "Lower", "Upper","Mean", "SD")
       
+    id <- match(unlist(lambda.stats[,1]), values(tem2)) 
+   # idNA<- !is.na(id)
+   # id <- id[]
+      
     values(lambdaRaster$Median) <- NA
-    values(lambdaRaster$Median)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,4])
+    values(lambdaRaster$Median)[id] <- unlist(lambda.stats[,4])
     values(lambdaRaster$Lower) <- NA
-    values(lambdaRaster$Lower)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,3])
+    values(lambdaRaster$Lower)[id] <- unlist(lambda.stats[,3])
     values(lambdaRaster$Upper) <- NA
-    values(lambdaRaster$Upper)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,5])
+    values(lambdaRaster$Upper)[id] <- unlist(lambda.stats[,5])
     values(lambdaRaster$Mean) <- NA
-    values(lambdaRaster$Mean)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,1])
+    values(lambdaRaster$Mean)[id] <- unlist(lambda.stats[,1])
     values(lambdaRaster$SD) <- NA
-    values(lambdaRaster$SD)[match(unlist(lambda.stats[,1]), values(tem2))] <- unlist(lambda.stats[,2])
+    values(lambdaRaster$SD)[id] <- unlist(lambda.stats[,2])
 
    
   }
