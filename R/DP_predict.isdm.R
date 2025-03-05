@@ -241,6 +241,9 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
         )
       ),
       by=ID ]
+      
+      rm(tem_lambda.stats)
+      gc()
     }
     else
     {
