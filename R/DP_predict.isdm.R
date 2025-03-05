@@ -14,7 +14,7 @@
 ###############################################################################################
 
 #Function to get prediction from a fitted INLA model.
-predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", confidence.level=0.95, quick=FALSE, scaleup=1, DaveQuickTest=0, DP.mem.clean=F, DPdebug=F, ...){
+predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", confidence.level=0.95, quick=FALSE, scaleup=1, use_newscaleup=T, DaveQuickTest=0, DP.mem.clean=F, DPdebug=F, ...){
   
   #check if there's anything to do.
   if( !is.logical(includeFixed) & !all( includeFixed %in% names( covars)))
@@ -231,13 +231,27 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     
     predcoords2 <- terra::crds(tem2, na.rm=FALSE)
     
-    lambda.stats <- mu.all[,as.list(
-      c(
+    if (use_newscaleup)
+    {
+      tem_lambda.stats <- mu.all[, as.list(colMeans(.SD)),by=ID ]
+      lambda.stats <- tem_lambda.stats[,as.list(
+        c(
           mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), 
           quantile(unlist(.SD), probs=c(0.025,0.5, 0.975))
-       )
+        )
       ),
       by=ID ]
+    }
+    else
+    {
+      lambda.stats <- mu.all[,as.list(
+        c(
+            mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), 
+            quantile(unlist(.SD), probs=c(0.025,0.5, 0.975))
+         )
+        ),
+        by=ID ]
+    }
     
     lambdaRaster <- c(tem2, tem2, tem2, tem2, tem2)
     names(lambdaRaster) <- c("Median", "Lower", "Upper","Mean", "SD")
