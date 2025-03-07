@@ -233,7 +233,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     
     if (use_newscaleup)
     {
-      tem_lambda.stats <- mu.all[, as.list(matrixStats::rowSums2(.SD)),by=ID ]
+      tem_lambda.stats <- mu.all[, as.list(matrixStats::colSums2(as.matrix(.SD))),by=ID ]
       lambda.stats <- tem_lambda.stats[,as.list(
         c(
           mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), 
