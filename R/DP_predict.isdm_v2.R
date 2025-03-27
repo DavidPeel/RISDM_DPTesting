@@ -12,9 +12,9 @@
 
 
 #Function to get prediction from a fitted INLA model.
-predict.isdm_test_V1 <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, 
+predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, 
                                includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", std_2_Density=F, confidence.level=0.95, 
-                               quick=FALSE, scaleup=1, use_newscaleup=T, DaveQuickTest=0, DP.mem.clean=F, DPdebug=F, ...){
+                               quick=FALSE, scaleup=1, DPdebug=F, DP.mem.clean=T, ...){
   
   #check if there's anything to do.
   if( !is.logical(includeFixed) & !all( includeFixed %in% names( covars)))
@@ -237,14 +237,16 @@ predict.isdm_test_V1 <- function( object, covars, habitatArea=NULL, S=500, inter
     
     predcoords2 <- terra::crds(tem2, na.rm=FALSE)
     
-    if (use_newscaleup)
-    {
       tem_lambda.stats <- mu.all[, as.list(matrixStats::colSums2(as.matrix(.SD))),by=ID ]
       
+      if (std_2_Density)
+      {
       HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup))
                         
       tem_lambda.stats <- tem_lambda.stats/HabVals
-      tem_lambda.stats[HabVals==0,]<-0
+      
+      }
+
       
       if( type=='link')
       {
@@ -261,17 +263,7 @@ predict.isdm_test_V1 <- function( object, covars, habitatArea=NULL, S=500, inter
       
       rm(tem_lambda.stats)
       gc()
-    }
-    else
-    {
-      lambda.stats <- mu.all[,as.list(
-        c(
-            mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), 
-            quantile(unlist(.SD), probs=c(0.025,0.5, 0.975))
-         )
-        ),
-        by=ID ]
-    }
+    
     
     lambdaRaster <- c(tem2, tem2, tem2, tem2, tem2)
     names(lambdaRaster) <- c("Median", "Lower", "Upper","Mean", "SD")
@@ -291,29 +283,18 @@ predict.isdm_test_V1 <- function( object, covars, habitatArea=NULL, S=500, inter
     values(lambdaRaster$SD) <- NA
     values(lambdaRaster$SD)[id] <- unlist(lambda.stats[,3])
 
+  if (std_2_Density) {  
+    tem_lambda.stats[HabVals==0,]<-0
+  }
+  else
+  {
+    tem_lambda.stats[terra::values( covars[[habitatArea]])==0,]<-0
+  }
+  
+    
    
   }
-  else if (DaveQuickTest==1)
-  {
-    # ONE apply function ---------------------------------
-    
-    # microbenchmark::microbenchmark(baseR=apply(D, 1, quantile, c(0.05, 0.95)),
-    # matrixStats=rowQuantiles(D, probs=c(.05, .95)),
-    # times=10L)
-  
-    limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
-    
-    lambda.stats <- apply(mu.all, 1, function(d){c(mean=mean(d), sd=stats::sd(d), quantile(d,c(limitty[1], 0.5, limitty[2])))})
-    
-    lambdaRaster <- terra::rast(cbind(predcoords, lambda.stats[,4]),
-                                crs = terra::crs(covars), type = "xyz")
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,3]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,4]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,1]), crs = terra::crs(covars), type = "xyz"))
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.stats[,2]), crs = terra::crs(covars), type = "xyz"))
-    names(lambdaRaster) <- c("Median", "Lower", "Upper", "Mean", "SD")
-  }
-  else if (DaveQuickTest==2)
+  else 
   {
     # Using matrixstats ---------------------------------
     
@@ -350,105 +331,29 @@ predict.isdm_test_V1 <- function( object, covars, habitatArea=NULL, S=500, inter
     
     names(lambdaRaster) <- c("Median", "Lower", "Upper",
                              "Mean", "SD")
-  }
-  else if (DP.mem.clean) {
-    limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
-    lambda.median <- apply(mu.all, 1, stats::quantile, probs = 0.5,  na.rm = TRUE)
-  
-    lambdaRaster <- terra::rast(cbind(predcoords, lambda.median),  crs = terra::crs(covars), type = "xyz")
-    
-    if (DP.mem.clean)
-    {
-      rm(lambda.median)
-      gc()
-    }
-    
-    
-    lambda.lower <- apply(mu.all, 1, stats::quantile, probs = limitty[1],  na.rm = TRUE)
-    
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.lower), crs = terra::crs(covars), type = "xyz"))
-    
-    if (DP.mem.clean)
-    {
-      rm(lambda.lower)
-      gc()
-    }
-    
-    lambda.upper <- apply(mu.all, 1, stats::quantile, probs = limitty[2],
-                          na.rm = TRUE)
-    
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.upper), crs = terra::crs(covars), type = "xyz"))
-    
-    if (DP.mem.clean)
-    {
-      rm(lambda.median)
-      gc()
-    }
-    
-    lambda.mean <- rowMeans(mu.all)
-    
-    
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.mean), crs = terra::crs(covars), type = "xyz"))
-    
-    if (DP.mem.clean)
-    {
-      rm(lambda.upper)
-      gc()
-    }
-    
-    lambda.sd <- apply(mu.all, 1, stats::sd)
-    lambdaRaster <- c(lambdaRaster, terra::rast(cbind(predcoords, lambda.sd), crs = terra::crs(covars), type = "xyz"))
-    
-    if (DP.mem.clean)
-    {
-      rm(lambda.sd)
-      gc()
-    }
-    
-    names(lambdaRaster) <- c("Median", "Lower", "Upper",
-                             "Mean", "SD")
-  }
-  else if( quick == FALSE){
-    #summaries
-    limitty <- c( (1-confidence.level)/2, 1-(1-confidence.level)/2)
-    lambda.median <- apply( mu.all, 1, stats::quantile, probs=0.5, na.rm=TRUE)
-    lambda.lower <- apply( mu.all, 1, stats::quantile, probs=limitty[1], na.rm=TRUE)
-    lambda.upper <- apply( mu.all, 1, stats::quantile, probs=limitty[2], na.rm=TRUE)
-    lambda.mean <- rowMeans( mu.all)
-    lambda.sd <- apply( mu.all, 1, stats::sd)
-    
-    #raster format
-    lambdaRaster <- terra::rast( cbind( predcoords, lambda.median), crs=terra::crs( covars), type='xyz')
-    lambdaRaster <- c(lambdaRaster, terra::rast( cbind( predcoords, lambda.lower), crs=terra::crs( covars), type='xyz'))
-    lambdaRaster <- c(lambdaRaster, terra::rast( cbind( predcoords, lambda.upper), crs=terra::crs( covars), type='xyz'))
-    lambdaRaster <- c(lambdaRaster, terra::rast( cbind( predcoords, lambda.mean), crs=terra::crs( covars), type='xyz'))
-    lambdaRaster <- c(lambdaRaster, terra::rast( cbind( predcoords, lambda.sd), crs=terra::crs( covars), type='xyz'))
-    names( lambdaRaster) <- c("Median","Lower","Upper","Mean","SD")
-  }
-  else{
-    lambda.mean <- mu.all
-    lambdaRaster <- terra::rast( cbind( predcoords, lambda.mean), crs=terra::crs( covars), type='xyz')
-    tmpRast <- terra::rast( lambdaRaster, nlyrs=5, names=c("Median","Lower","Upper","Mean","SD"), vals=-9999)
-    tmpRast$Mean <- lambdaRaster
-    lambdaRaster <- tmpRast
-    mu.all <- samples <- limitty <- NULL
-  }
-  
-  #sort out extent in case...
-  lambdaRaster <- terra::extend( lambdaRaster, terra::ext( covars))  #just in case it is needed -- could be dropped throughout the creation of the raster.
-  
 
-  
-  if (scaleup==1)
-  {
+    #sort out extent in case...
+    lambdaRaster <- terra::extend( lambdaRaster, terra::ext( covars))  #just in case it is needed -- could be dropped throughout the creation of the raster.  
+
     if (std_2_Density)
     {
       terra::values( lambdaRaster) <- terra::values( lambdaRaster)/terra::values( covars[[habitatArea]])
     }
     
-   #zero habitat means zero individuals
-   terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
+    #zero habitat means zero individuals
+    terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
+    
   }
+# Scotts Original
+#  else{
+#    lambda.mean <- mu.all
+#    lambdaRaster <- terra::rast( cbind( predcoords, lambda.mean), crs=terra::crs( covars), type='xyz')
+#    tmpRast <- terra::rast( lambdaRaster, nlyrs=5, names=c("Median","Lower","Upper","Mean","SD"), vals=-9999)
+#    tmpRast$Mean <- lambdaRaster
+#    lambdaRaster <- tmpRast
+#    mu.all <- samples <- limitty <- NULL
+#  }
+  
   
   res <- list( field=lambdaRaster, cell.samples=mu.all, fixedSamples=samples$fixedEffects, predLocats=predcoords, confidence.limits=limitty, quick=quick) #, hyperpar=samples$hyperpar
   
