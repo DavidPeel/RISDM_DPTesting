@@ -337,7 +337,10 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
 
     if (std_2_Density)
     {
-      terra::values( lambdaRaster) <- terra::values( lambdaRaster)/terra::values( covars[[habitatArea]])
+      for (i in 1:dim(lambdaRaster)[3])
+      {
+      terra::values( lambdaRaster[[i]]) <- terra::values( lambdaRaster[[i]])/terra::values( covars[[habitatArea]])
+      }
     }
     
     #zero habitat means zero individuals
