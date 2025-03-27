@@ -241,7 +241,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
       
       if (std_2_Density)
       {
-      HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup))
+      HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup, fun="sum"))
                         
       tem_lambda.stats <- tem_lambda.stats/HabVals
       
@@ -300,7 +300,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     
     if (std_2_Density)
     {
-       mu.all <-mu.all/terra::values( covars[[habitatArea]])
+       mu.all <-mu.all/covarData$habitatArea
     }
     
     
