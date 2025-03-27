@@ -14,7 +14,9 @@
 ###############################################################################################
 
 #Function to get prediction from a fitted INLA model.
-predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", confidence.level=0.95, quick=FALSE, scaleup=1, use_newscaleup=T, DaveQuickTest=0, DP.mem.clean=F, DPdebug=F, ...){
+predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, 
+                               includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", std_2_Density=F, confidence.level=0.95, 
+                               quick=FALSE, scaleup=1, use_newscaleup=T, DaveQuickTest=0, DP.mem.clean=F, DPdebug=F, ...){
   
   #check if there's anything to do.
   if( !is.logical(includeFixed) & !all( includeFixed %in% names( covars)))
@@ -217,8 +219,14 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
   
   
   ### DP Hacking
+  
   if (scaleup>1)
   {
+    if( type=='link')
+    {
+      mu.all <- exp(mu.all)
+    }
+    
     limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
     
     tem <- terra::rast(cbind(predcoords, 1), crs = terra::crs(covars), type = "xyz")
@@ -234,6 +242,17 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     if (use_newscaleup)
     {
       tem_lambda.stats <- mu.all[, as.list(matrixStats::colSums2(as.matrix(.SD))),by=ID ]
+      
+      HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup))
+                        
+      tem_lambda.stats <- tem_lambda.stats/HabVals
+      tem_lambda.stats[HabVals==0,]<-0
+      
+      if( type=='link')
+      {
+        tem_lambda.stats <- log(tem_lambda.stats)
+      }
+      
       lambda.stats <- tem_lambda.stats[,as.list(
         c(
           mu=mean(unlist(.SD)), sd=sd(unlist(.SD)), 
@@ -420,8 +439,18 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
   #sort out extent in case...
   lambdaRaster <- terra::extend( lambdaRaster, terra::ext( covars))  #just in case it is needed -- could be dropped throughout the creation of the raster.
   
-  #zero habitat means zero individuals
-  terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
+
+  
+  if (scaleup==1)
+  {
+    if (std_2_Density)
+    {
+      terra::values( lambdaRaster) <- terra::values( lambdaRaster)/terra::values( covars[[habitatArea]])
+    }
+    
+   #zero habitat means zero individuals
+   terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
+  }
   
   res <- list( field=lambdaRaster, cell.samples=mu.all, fixedSamples=samples$fixedEffects, predLocats=predcoords, confidence.limits=limitty, quick=quick) #, hyperpar=samples$hyperpar
   
