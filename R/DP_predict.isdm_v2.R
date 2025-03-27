@@ -298,6 +298,12 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
   {
     # Using matrixstats ---------------------------------
     
+    if (std_2_Density)
+    {
+       mu.all <-mu.all/terra::values( covars[[habitatArea]])
+    }
+    
+    
     limitty <- c((1 - confidence.level)/2, 1 - (1 - confidence.level)/2)
     
     lambda.qs <- matrixStats::rowQuantiles(mu.all, probs=c(limitty[1], 0.5, limitty[2]))
@@ -335,13 +341,13 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     #sort out extent in case...
     lambdaRaster <- terra::extend( lambdaRaster, terra::ext( covars))  #just in case it is needed -- could be dropped throughout the creation of the raster.  
 
-    if (std_2_Density)
-    {
-      for (i in 1:dim(lambdaRaster)[3])
-      {
-      terra::values( lambdaRaster[[i]]) <- terra::values( lambdaRaster[[i]])/terra::values( covars[[habitatArea]])
-      }
-    }
+    # if (std_2_Density)
+    # {
+    #   for (i in 1:dim(lambdaRaster)[3])
+    #   {
+    #   terra::values( lambdaRaster[[i]]) <- terra::values( lambdaRaster[[i]])/terra::values( covars[[habitatArea]])
+    #   }
+    # }
     
     #zero habitat means zero individuals
     terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
