@@ -277,6 +277,11 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
    # idNA<- !is.na(id)
    # id <- id[]
       
+    if (DPdebug)
+    {
+      browser()
+    }
+    
     values(lambdaRaster$Median) <- NA
     values(lambdaRaster$Median)[id] <- unlist(lambda.stats[,5])
     values(lambdaRaster$Lower) <- NA
