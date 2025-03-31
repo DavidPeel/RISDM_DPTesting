@@ -294,7 +294,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     values(lambdaRaster$SD)[id] <- unlist(lambda.stats[,3])
 
  # if (std_2_Density) {  
-    tem_lambda.stats[HabVals==0,]<-0
+ #   tem_lambda.stats[HabVals==0,]<-0
  # }
  # else
  # {
@@ -360,7 +360,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     # }
     
     #zero habitat means zero individuals
-    terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
+   # terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
     
   }
 # Scotts Original
@@ -372,6 +372,9 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
 #    lambdaRaster <- tmpRast
 #    mu.all <- samples <- limitty <- NULL
 #  }
+ 
+  #zero habitat means zero individuals 
+  terra::values( lambdaRaster)[terra::values( covars[[habitatArea]])==0] <- 0
   
   
   res <- list( field=lambdaRaster, cell.samples=mu.all, fixedSamples=samples$fixedEffects, predLocats=predcoords, confidence.limits=limitty, quick=quick) #, hyperpar=samples$hyperpar
