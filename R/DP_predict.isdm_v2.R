@@ -248,7 +248,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
         rm(tem)
      # HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup, fun="sum"))
                         
-      tem_lambda.stats[,1:(ncol(tem_lambda.stats)-1)] <- tem_lambda.stats[,1:(ncol(tem_lambda.stats)-1)]/HabVals * unitAdj^2
+      tem_lambda.stats[,2:ncol(tem_lambda.stats)] <- tem_lambda.stats[,2:ncol(tem_lambda.stats)]/HabVals * unitAdj^2
       
       }
 
