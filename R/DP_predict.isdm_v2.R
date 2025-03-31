@@ -244,7 +244,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
         tem<- as.data.table(covarData[,habitatArea])
         tem[,ID:=id]
         
-        HabVals <- as.matrix(tem[,sum(.SD), by=ID])
+        HabVals <- as.matrix(tem[,sum(.SD), by=ID])[,2]
         rm(tem)
      # HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup, fun="sum"))
                         
