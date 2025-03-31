@@ -255,7 +255,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
       
       if( type=='link')
       {
-        tem_lambda.stats <- log(tem_lambda.stats)
+        tem_lambda.stats[,2:ncol(tem_lambda.stats)] <- log(tem_lambda.stats[,2:ncol(tem_lambda.stats)])
       }
       
       lambda.stats <- tem_lambda.stats[,as.list(
