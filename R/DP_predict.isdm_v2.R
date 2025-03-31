@@ -14,7 +14,7 @@
 #Function to get prediction from a fitted INLA model.
 predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercept.terms=NULL, n.threads=NULL, n.batches=1, 
                                includeRandom=TRUE, includeFixed=TRUE, includeBias=FALSE, type="intensity", std_2_Density=F, confidence.level=0.95, 
-                               quick=FALSE, scaleup=1, DPdebug=F, DP.mem.clean=T, ...){
+                               quick=FALSE, scaleup=1, DPdebug=F, DP.mem.clean=T, unitAdj=1000, ...){
   
   #check if there's anything to do.
   if( !is.logical(includeFixed) & !all( includeFixed %in% names( covars)))
@@ -241,9 +241,14 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
       
       if (std_2_Density)
       {
-      HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup, fun="sum"))
+        tem<- as.data.table(covarData[,habitatArea])
+        tem[,ID:=id]
+        
+        HabVals <- as.matrix(tem[sum(.SD), by-ID])
+        rm(tem)
+     # HabVals <- values(terra::aggregate(covars[[habitatArea]], scaleup, fun="sum"))
                         
-      tem_lambda.stats <- tem_lambda.stats/HabVals
+      tem_lambda.stats <- tem_lambda.stats/HabVals * unitAdj^2
       
       }
 
@@ -283,13 +288,13 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     values(lambdaRaster$SD) <- NA
     values(lambdaRaster$SD)[id] <- unlist(lambda.stats[,3])
 
-  if (std_2_Density) {  
+ # if (std_2_Density) {  
     tem_lambda.stats[HabVals==0,]<-0
-  }
-  else
-  {
-    tem_lambda.stats[terra::values( covars[[habitatArea]])==0,]<-0
-  }
+ # }
+ # else
+ # {
+ #   tem_lambda.stats[terra::values( covars[[habitatArea]])==0,]<-0
+ # }
   
     
    
@@ -300,7 +305,7 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     
     if (std_2_Density)
     {
-       mu.all <-mu.all/covarData$habitatArea
+       mu.all <-mu.all/covarData$habitatArea  * unitAdj^2
     }
     
     
