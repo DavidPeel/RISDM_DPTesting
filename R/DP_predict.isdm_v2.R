@@ -310,7 +310,14 @@ predict.isdm_test <- function( object, covars, habitatArea=NULL, S=500, intercep
     
     if (std_2_Density)
     {
+      if (type=='link')
+      {
+        mu.all <-mu.all-log(covarData$habitatArea)  + 2*log(unitAdj)
+      }
+      else
+      {
        mu.all <-mu.all/covarData$habitatArea  * unitAdj^2
+      }
     }
     
     
